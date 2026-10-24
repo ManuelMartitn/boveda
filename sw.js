@@ -18,7 +18,7 @@ self.addEventListener("fetch", e => {
   if (e.request.method !== "GET") return;
   // Primero intenta la versión más reciente; sin conexión usa la guardada.
   e.respondWith(
-    fetch(e.request)
+    fetch(e.request, { cache: "no-store" })
       .then(r => { const copy = r.clone(); caches.open(CACHE).then(c => c.put(e.request, copy)); return r; })
       .catch(() => caches.match(e.request, { ignoreSearch: true }))
   );
