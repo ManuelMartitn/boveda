@@ -1,6 +1,6 @@
 // Guarda la app en el móvil para que funcione sin conexión.
 // Al publicar cambios, sube el número de versión.
-const CACHE = "boveda-v4";
+const CACHE = "boveda-v5";
 const FILES = ["./", "index.html", "manifest.webmanifest", "icon-180.png", "icon-512.png"];
 
 self.addEventListener("install", e => {
