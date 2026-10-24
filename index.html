@@ -207,7 +207,6 @@ function render() {
     info.append(t, u);
     const btns = document.createElement("div"); btns.className = "row";
     const mk = (txt, fn) => { const b = document.createElement("button"); b.className = "sm"; b.textContent = txt; b.onclick = fn; return b; };
-    if (e.u) btns.append(mk("Usuario", () => copy(e.u, "Usuario")));
     if (e.p) btns.append(mk("Clave", () => copy(e.p, "Contraseña")));
     btns.append(mk("Editar", () => openEdit(e.id)));
     row.append(info, btns); list.append(row);
