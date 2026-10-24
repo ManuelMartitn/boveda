@@ -201,6 +201,12 @@ function webUrl(w) {
   catch (e) { return null; }
 }
 
+// En iPhone abre siempre en Safari (aunque Chrome sea el navegador predeterminado)
+function openWeb(url) {
+  if (/iPhone|iPad|iPod/.test(navigator.userAgent)) location.href = "x-safari-" + url;
+  else window.open(url, "_blank", "noopener");
+}
+
 function render() {
   const q = $("q").value.trim().toLowerCase(), list = $("list");
   const items = entries
@@ -214,7 +220,7 @@ function render() {
     const t = document.createElement("div"); t.className = "t"; t.textContent = e.t || "(sin nombre)";
     info.append(t);
     const web = webUrl(e.w);
-    if (web) { t.classList.add("link"); t.textContent += " ↗"; t.onclick = () => window.open(web, "_blank", "noopener"); }
+    if (web) { t.classList.add("link"); t.textContent += " ↗"; t.onclick = () => openWeb(web); }
     const btns = document.createElement("div"); btns.className = "row";
     const mk = (txt, fn) => { const b = document.createElement("button"); b.className = "sm"; b.textContent = txt; b.onclick = fn; return b; };
     if (e.u) btns.append(mk("Usuario", () => copy(e.u, "Usuario")));
