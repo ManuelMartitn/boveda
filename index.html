@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; form-action 'none';">
+<title>Bóveda</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Bóveda">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#1f6feb">
+<style>
+:root{--bg:#f4f5f7;--card:#fff;--tx:#1b1f24;--mut:#667085;--bd:#d0d5dd;--ac:#1f6feb;--ok:#1a7f37;--err:#cf222e}
+@media (prefers-color-scheme:dark){:root{--bg:#0d1117;--card:#161b22;--tx:#e6edf3;--mut:#8b949e;--bd:#30363d;--ac:#2f81f7;--ok:#3fb950;--err:#f85149}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+.wrap{max-width:640px;margin:0 auto;padding:calc(16px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) calc(24px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left))}
+button{min-height:44px}
+button.sm{min-height:38px}
+body{-webkit-tap-highlight-color:transparent}
+h1{font-size:1.4rem;margin:8px 0 16px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:16px;margin-bottom:12px}
+label{display:block;font-size:.85rem;color:var(--mut);margin:10px 0 4px}
+input,textarea{width:100%;padding:10px 12px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--tx);font:inherit}
+textarea{min-height:70px;resize:vertical}
+button{font:inherit;padding:9px 14px;border-radius:8px;border:1px solid var(--bd);background:var(--card);color:var(--tx);cursor:pointer}
+button.pri{background:var(--ac);border-color:var(--ac);color:#fff}
+button.del{color:var(--err)}
+button.sm{padding:5px 10px;font-size:.85rem}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.row.end{justify-content:flex-end}
+.grow{flex:1;min-width:0}
+.hidden{display:none!important}
+.msg{color:var(--err);font-size:.9rem;min-height:1.2em;margin-top:8px}
+.mut{color:var(--mut);font-size:.85rem}
+.item{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:12px 0;border-top:1px solid var(--bd)}
+.item:first-child{border-top:0}
+.item .t{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item .u{color:var(--mut);font-size:.85rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pwf{display:flex;gap:6px}
+dialog{border:1px solid var(--bd);border-radius:12px;background:var(--card);color:var(--tx);width:min(560px,calc(100% - 32px));padding:16px}
+dialog::backdrop{background:rgba(0,0,0,.5)}
+#toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--tx);color:var(--bg);padding:8px 14px;border-radius:8px;font-size:.9rem;opacity:0;transition:opacity .2s;pointer-events:none}
+#toast.on{opacity:1}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🔒 Bóveda</h1>
+
+  <!-- Crear bóveda -->
+  <section id="vSetup" class="card hidden">
+    <b>Crear bóveda nueva</b>
+    <p class="mut">Elige una contraseña maestra larga (mínimo 12 caracteres). Si la olvidas, no hay forma de recuperar los datos.</p>
+    <label>Contraseña maestra</label><input id="s1" type="password" autocomplete="new-password">
+    <label>Repetir contraseña maestra</label><input id="s2" type="password" autocomplete="new-password">
+    <div class="msg" id="sMsg"></div>
+    <div class="row end"><button id="sImp">Importar copia</button><button class="pri" id="sBtn">Crear</button></div>
+  </section>
+
+  <!-- Desbloquear -->
+  <section id="vLock" class="card hidden">
+    <b id="lTitle">Bóveda bloqueada</b>
+    <label>Contraseña maestra</label><input id="lPw" type="password" autocomplete="current-password">
+    <div class="msg" id="lMsg"></div>
+    <div class="row end"><button id="lImp">Importar copia</button><button class="pri" id="lBtn">Desbloquear</button></div>
+    <p class="mut" style="margin-top:16px"><a href="#" id="lWipe" style="color:var(--err)">Borrar la bóveda de este dispositivo</a></p>
+  </section>
+
+  <!-- Principal -->
+  <section id="vMain" class="hidden">
+    <div class="row" style="margin-bottom:12px">
+      <input id="q" class="grow" placeholder="Buscar…" autocomplete="off">
+      <button class="pri" id="mAdd">＋ Nueva</button>
+    </div>
+    <div class="card" id="list"></div>
+    <div class="row">
+      <button id="mExp">Exportar copia cifrada</button>
+      <button id="mMaster">Cambiar maestra</button>
+      <button id="mLock">Bloquear</button>
+    </div>
+    <p class="mut" id="mInfo"></p>
+  </section>
+</div>
+
+<!-- Editar entrada -->
+<dialog id="dlg">
+  <b id="dTitle">Entrada</b>
+  <label>Nombre</label><input id="fT" autocomplete="off">
+  <label>Usuario / email</label><input id="fU" autocomplete="off">
+  <label>Contraseña</label>
+  <div class="pwf"><input id="fP" type="password" autocomplete="off" class="grow"><button id="fShow" class="sm">👁</button><button id="fGen" class="sm">Generar</button></div>
+  <label>Web</label><input id="fW" autocomplete="off">
+  <label>Notas</label><textarea id="fN"></textarea>
+  <div class="row" style="margin-top:14px;justify-content:space-between">
+    <button class="del" id="fDel">Eliminar</button>
+    <div class="row"><button id="fCancel">Cancelar</button><button class="pri" id="fSave">Guardar</button></div>
+  </div>
+</dialog>
+
+<!-- Cambiar maestra -->
+<dialog id="dlgM">
+  <b>Cambiar contraseña maestra</b>
+  <label>Contraseña actual</label><input id="m0" type="password">
+  <label>Nueva (mín. 12)</label><input id="m1" type="password">
+  <label>Repetir nueva</label><input id="m2" type="password">
+  <div class="msg" id="mMsg"></div>
+  <div class="row end"><button id="mCancel">Cancelar</button><button class="pri" id="mSave">Cambiar</button></div>
+</dialog>
+
+<input type="file" id="file" accept=".json,application/json" class="hidden">
+<div id="toast"></div>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const STORE = "boveda_v1", ITER = 600000, AUTOLOCK_MS = 5 * 60 * 1000, CLIP_MS = 30000;
+const te = new TextEncoder(), td = new TextDecoder();
+
+let key = null, salt = null, entries = [], pendingBlob = null, editId = null, lockTimer = null, clipTimer = null;
+
+// ---------- utilidades ----------
+const b64 = u8 => { let s = ""; u8.forEach(b => s += String.fromCharCode(b)); return btoa(s); };
+const ub64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+const uid = () => (crypto.randomUUID ? crypto.randomUUID() : b64(crypto.getRandomValues(new Uint8Array(12))));
+function toast(t) { const el = $("toast"); el.textContent = t; el.classList.add("on"); setTimeout(() => el.classList.remove("on"), 1800); }
+function show(v) { ["vSetup", "vLock", "vMain"].forEach(x => $(x).classList.toggle("hidden", x !== v)); }
+function stored() { try { const s = localStorage.getItem(STORE); return s ? JSON.parse(s) : null; } catch (e) { return null; } }
+function persist(blob) { try { localStorage.setItem(STORE, JSON.stringify(blob)); return true; } catch (e) { return false; } }
+function validBlob(b) { return b && b.v === 1 && b.salt && b.iv && b.ct; }
+
+// ---------- criptografía ----------
+async function deriveKey(pw, s, iter) {
+  const base = await crypto.subtle.importKey("raw", te.encode(pw), "PBKDF2", false, ["deriveKey"]);
+  return crypto.subtle.deriveKey({ name: "PBKDF2", salt: s, iterations: iter || ITER, hash: "SHA-256" },
+    base, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
+}
+async function encryptVault() {
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, te.encode(JSON.stringify(entries)));
+  return { v: 1, iter: ITER, salt: b64(salt), iv: b64(iv), ct: b64(new Uint8Array(ct)) };
+}
+async function save() { const blob = await encryptVault(); if (!persist(blob)) toast("Aviso: este navegador no guarda datos. Exporta la copia."); return blob; }
+async function decryptVault(pw, blob) {
+  const s = ub64(blob.salt), k = await deriveKey(pw, s, blob.iter);
+  const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv: ub64(blob.iv) }, k, ub64(blob.ct));
+  return { k, s, data: JSON.parse(td.decode(pt)) };
+}
+
+// ---------- generador ----------
+function genPassword(len = 20) {
+  const cs = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%&*-_=+?";
+  const max = 256 - (256 % cs.length); let out = "";
+  while (out.length < len) {
+    for (const b of crypto.getRandomValues(new Uint8Array(len * 2))) { if (b < max && out.length < len) out += cs[b % cs.length]; }
+  }
+  return out;
+}
+
+// ---------- portapapeles ----------
+async function copy(text, label) {
+  try {
+    await navigator.clipboard.writeText(text);
+    toast(label + " copiado · se borra en 30 s");
+    clearTimeout(clipTimer);
+    clipTimer = setTimeout(() => navigator.clipboard.writeText("").catch(() => {}), CLIP_MS);
+  } catch (e) { toast("No se pudo copiar"); }
+}
+
+// ---------- bloqueo automático ----------
+function lock() {
+  key = null; salt = null; entries = []; editId = null;
+  if ($("dlg").open) $("dlg").close(); if ($("dlgM").open) $("dlgM").close();
+  $("list").replaceChildren(); $("q").value = "";
+  pendingBlob = null; openLockScreen();
+}
+function resetLock() { if (!key) return; clearTimeout(lockTimer); lockTimer = setTimeout(lock, AUTOLOCK_MS); }
+["click", "keydown", "touchstart", "mousemove", "scroll"].forEach(ev => document.addEventListener(ev, resetLock, { passive: true }));
+
+// ---------- pantallas ----------
+function openLockScreen() {
+  const has = stored();
+  if (!has && !pendingBlob) { show("vSetup"); $("s1").focus(); return; }
+  $("lTitle").textContent = pendingBlob ? "Desbloquear copia importada" : "Bóveda bloqueada";
+  $("lPw").value = ""; $("lMsg").textContent = ""; show("vLock"); $("lPw").focus();
+}
+function openMain() { show("vMain"); render(); resetLock(); }
+
+function render() {
+  const q = $("q").value.trim().toLowerCase(), list = $("list");
+  const items = entries
+    .filter(e => !q || [e.t, e.u, e.w].some(x => (x || "").toLowerCase().includes(q)))
+    .sort((a, b) => (a.t || "").localeCompare(b.t || "", "es"));
+  list.replaceChildren();
+  if (!items.length) { const p = document.createElement("p"); p.className = "mut"; p.textContent = entries.length ? "Sin resultados." : "Aún no hay entradas. Pulsa «＋ Nueva»."; list.append(p); }
+  for (const e of items) {
+    const row = document.createElement("div"); row.className = "item";
+    const info = document.createElement("div"); info.className = "grow";
+    const t = document.createElement("div"); t.className = "t"; t.textContent = e.t || "(sin nombre)";
+    const u = document.createElement("div"); u.className = "u"; u.textContent = e.u || e.w || "";
+    info.append(t, u);
+    const btns = document.createElement("div"); btns.className = "row";
+    const mk = (txt, fn) => { const b = document.createElement("button"); b.className = "sm"; b.textContent = txt; b.onclick = fn; return b; };
+    if (e.u) btns.append(mk("Usuario", () => copy(e.u, "Usuario")));
+    if (e.p) btns.append(mk("Clave", () => copy(e.p, "Contraseña")));
+    btns.append(mk("Editar", () => openEdit(e.id)));
+    row.append(info, btns); list.append(row);
+  }
+  $("mInfo").textContent = entries.length + " entradas · se bloquea tras 5 min sin uso";
+}
+
+// ---------- crear ----------
+$("sBtn").onclick = async () => {
+  const a = $("s1").value, b = $("s2").value;
+  if (a.length < 12) return $("sMsg").textContent = "Mínimo 12 caracteres.";
+  if (a !== b) return $("sMsg").textContent = "No coinciden.";
+  $("sMsg").textContent = "Creando…";
+  salt = crypto.getRandomValues(new Uint8Array(16)); key = await deriveKey(a, salt); entries = [];
+  await save(); $("s1").value = $("s2").value = ""; $("sMsg").textContent = ""; openMain();
+};
+
+// ---------- desbloquear ----------
+async function doUnlock() {
+  const pw = $("lPw").value; if (!pw) return;
+  $("lMsg").textContent = "Comprobando…"; $("lBtn").disabled = true;
+  try {
+    const blob = pendingBlob || stored();
+    const r = await decryptVault(pw, blob);
+    key = r.k; salt = r.s; entries = Array.isArray(r.data) ? r.data : [];
+    if (pendingBlob) { persist(blob); pendingBlob = null; toast("Copia importada"); }
+    $("lPw").value = ""; $("lMsg").textContent = ""; openMain();
+  } catch (e) { $("lMsg").textContent = "Contraseña incorrecta o archivo dañado."; }
+  $("lBtn").disabled = false;
+}
+$("lBtn").onclick = doUnlock;
+$("lPw").addEventListener("keydown", e => { if (e.key === "Enter") doUnlock(); });
+$("s2").addEventListener("keydown", e => { if (e.key === "Enter") $("sBtn").click(); });
+
+$("lWipe").onclick = ev => {
+  ev.preventDefault();
+  if (confirm("¿Borrar la bóveda de ESTE dispositivo? Solo podrás recuperarla con una copia exportada.")) {
+    try { localStorage.removeItem(STORE); } catch (e) {} pendingBlob = null; openLockScreen();
+  }
+};
+
+// ---------- importar / exportar ----------
+$("sImp").onclick = $("lImp").onclick = () => $("file").click();
+$("file").onchange = async () => {
+  const f = $("file").files[0]; $("file").value = ""; if (!f) return;
+  try {
+    const b = JSON.parse(await f.text());
+    if (!validBlob(b)) throw 0;
+    pendingBlob = b; openLockScreen();
+    $("lMsg").textContent = "Introduce la contraseña maestra de esa copia. Reemplazará la de este dispositivo.";
+  } catch (e) { toast("Archivo no válido"); }
+};
+$("mExp").onclick = async () => {
+  const blob = await save();
+  const name = "boveda-" + new Date().toISOString().slice(0, 10) + ".json";
+  const file = new File([JSON.stringify(blob)], name, { type: "application/json" });
+  // iPhone: hoja de compartir → «Guardar en Archivos» (iCloud Drive)
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try { await navigator.share({ files: [file], title: "Copia cifrada de la bóveda" }); toast("Copia lista"); return; }
+    catch (e) { if (e.name === "AbortError") return; }
+  }
+  const url = URL.createObjectURL(file);
+  const a = document.createElement("a"); a.href = url; a.download = name;
+  document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+  toast("Copia cifrada descargada");
+};
+
+// ---------- editar ----------
+function openEdit(id) {
+  editId = id; const e = entries.find(x => x.id === id) || {};
+  $("dTitle").textContent = id ? "Editar entrada" : "Nueva entrada";
+  $("fT").value = e.t || ""; $("fU").value = e.u || ""; $("fP").value = e.p || ""; $("fW").value = e.w || ""; $("fN").value = e.n || "";
+  $("fP").type = "password"; $("fDel").classList.toggle("hidden", !id);
+  $("dlg").showModal(); $("fT").focus();
+}
+$("mAdd").onclick = () => openEdit(null);
+$("fShow").onclick = () => $("fP").type = $("fP").type === "password" ? "text" : "password";
+$("fGen").onclick = () => { $("fP").value = genPassword(); $("fP").type = "text"; };
+$("fCancel").onclick = () => $("dlg").close();
+$("fSave").onclick = async () => {
+  if (!$("fT").value.trim()) return toast("Pon un nombre");
+  const data = { t: $("fT").value.trim(), u: $("fU").value.trim(), p: $("fP").value, w: $("fW").value.trim(), n: $("fN").value, m: Date.now() };
+  if (editId) Object.assign(entries.find(x => x.id === editId), data); else entries.push({ id: uid(), ...data });
+  await save(); $("dlg").close(); render(); toast("Guardado");
+};
+$("fDel").onclick = async () => {
+  if (!confirm("¿Eliminar esta entrada?")) return;
+  entries = entries.filter(x => x.id !== editId); await save(); $("dlg").close(); render(); toast("Eliminada");
+};
+
+// ---------- cambiar maestra ----------
+$("mMaster").onclick = () => { ["m0", "m1", "m2"].forEach(i => $(i).value = ""); $("mMsg").textContent = ""; $("dlgM").showModal(); };
+$("mCancel").onclick = () => $("dlgM").close();
+$("mSave").onclick = async () => {
+  const a = $("m1").value, b = $("m2").value;
+  if (a.length < 12) return $("mMsg").textContent = "Mínimo 12 caracteres.";
+  if (a !== b) return $("mMsg").textContent = "No coinciden.";
+  $("mMsg").textContent = "Comprobando…";
+  try { await decryptVault($("m0").value, await encryptVault()); }
+  catch (e) { return $("mMsg").textContent = "La contraseña actual no es correcta."; }
+  salt = crypto.getRandomValues(new Uint8Array(16)); key = await deriveKey(a, salt);
+  await save(); $("dlgM").close(); toast("Contraseña maestra cambiada. Exporta una copia nueva.");
+};
+
+$("q").addEventListener("input", render);
+
+// ---------- inicio ----------
+if (!window.crypto || !crypto.subtle) {
+  document.querySelector(".wrap").innerHTML = "<div class='card'>Este navegador no permite cifrado seguro. Ábrelo en Chrome, Edge, Firefox o Safari actualizados.</div>";
+} else {
+  openLockScreen();
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+  if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+  const standalone = window.navigator.standalone || matchMedia("(display-mode: standalone)").matches;
+  if (!standalone && /iPhone|iPad/.test(navigator.userAgent)) {
+    const tip = document.createElement("div"); tip.className = "card mut";
+    tip.textContent = "Para que tus datos no se borren: pulsa Compartir ⬆️ → «Añadir a pantalla de inicio» y usa la app desde ese icono.";
+    document.querySelector(".wrap").insertBefore(tip, document.querySelector(".wrap h1").nextSibling);
+  }
+}
+</script>
+</body>
+</html>
