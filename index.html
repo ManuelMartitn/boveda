@@ -36,10 +36,12 @@ button.sm{padding:5px 10px;font-size:.85rem}
 .hidden{display:none!important}
 .msg{color:var(--err);font-size:.9rem;min-height:1.2em;margin-top:8px}
 .mut{color:var(--mut);font-size:.85rem}
-.item{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:12px 0;border-top:1px solid var(--bd)}
-.item:first-child{border-top:0}
-.item .t{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.item .u{color:var(--mut);font-size:.85rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item{display:flex;flex-direction:column;gap:10px;padding:14px 0;border-top:1px solid var(--bd)}
+.item:first-child{border-top:0;padding-top:4px}
+.item .t{font-weight:600;font-size:1.05rem;overflow-wrap:anywhere}
+.item .u{color:var(--mut);font-size:.9rem;overflow-wrap:anywhere;margin-top:2px}
+.item .row{flex-wrap:nowrap}
+.item .row button{flex:1}
 .pwf{display:flex;gap:6px}
 dialog{border:1px solid var(--bd);border-radius:12px;background:var(--card);color:var(--tx);width:min(560px,calc(100% - 32px));padding:16px}
 dialog::backdrop{background:rgba(0,0,0,.5)}
