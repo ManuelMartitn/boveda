@@ -79,6 +79,7 @@ dialog::backdrop{background:rgba(0,0,0,.5)}
     <div class="card" id="list"></div>
     <div class="row">
       <button id="mExp">Exportar copia cifrada</button>
+      <button id="mDl">Descargar archivo</button>
       <button id="mMaster">Cambiar maestra</button>
       <button id="mLock">Bloquear</button>
     </div>
@@ -257,20 +258,27 @@ $("file").onchange = async () => {
     $("lMsg").textContent = "Introduce la contraseña maestra de esa copia. Reemplazará la de este dispositivo.";
   } catch (e) { toast("Archivo no válido"); }
 };
-$("mExp").onclick = async () => {
+async function backupFile() {
   const blob = await save();
   const name = "boveda-" + new Date().toISOString().slice(0, 10) + ".json";
-  const file = new File([JSON.stringify(blob)], name, { type: "application/json" });
-  // iPhone: hoja de compartir → «Guardar en Archivos» (iCloud Drive)
+  return new File([JSON.stringify(blob)], name, { type: "application/json" });
+}
+function downloadFile(file) {
+  // iPhone: Safari pregunta «¿Descargar?» y lo guarda en Archivos → Descargas
+  const url = URL.createObjectURL(file);
+  const a = document.createElement("a"); a.href = url; a.download = file.name; a.rel = "noopener";
+  document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 60000);
+  toast("Copia descargada · mira en Archivos → Descargas");
+}
+$("mExp").onclick = async () => {
+  const file = await backupFile();
   if (navigator.canShare && navigator.canShare({ files: [file] })) {
     try { await navigator.share({ files: [file], title: "Copia cifrada de la bóveda" }); toast("Copia lista"); return; }
     catch (e) { if (e.name === "AbortError") return; }
   }
-  const url = URL.createObjectURL(file);
-  const a = document.createElement("a"); a.href = url; a.download = name;
-  document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
-  toast("Copia cifrada descargada");
+  downloadFile(file);
 };
+$("mDl").onclick = async () => downloadFile(await backupFile());
 
 // ---------- editar ----------
 function openEdit(id) {
