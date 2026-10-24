@@ -40,6 +40,7 @@ button.sm{padding:5px 10px;font-size:.85rem}
 .item:first-child{border-top:0;padding-top:4px}
 .item .t{font-weight:600;font-size:1.05rem;overflow-wrap:anywhere}
 .item .u{color:var(--mut);font-size:.9rem;overflow-wrap:anywhere;margin-top:2px}
+.item .t.link{color:var(--ac);cursor:pointer}
 .item .row{flex-wrap:nowrap}
 .item .row button{flex:1}
 .pwf{display:flex;gap:6px}
@@ -212,12 +213,12 @@ function render() {
     const info = document.createElement("div"); info.className = "grow";
     const t = document.createElement("div"); t.className = "t"; t.textContent = e.t || "(sin nombre)";
     info.append(t);
+    const web = webUrl(e.w);
+    if (web) { t.classList.add("link"); t.textContent += " ↗"; t.onclick = () => window.open(web, "_blank", "noopener"); }
     const btns = document.createElement("div"); btns.className = "row";
     const mk = (txt, fn) => { const b = document.createElement("button"); b.className = "sm"; b.textContent = txt; b.onclick = fn; return b; };
     if (e.u) btns.append(mk("Usuario", () => copy(e.u, "Usuario")));
     if (e.p) btns.append(mk("Clave", () => copy(e.p, "Contraseña")));
-    const web = webUrl(e.w);
-    if (web) btns.append(mk("Web", () => window.open(web, "_blank", "noopener")));
     btns.append(mk("Editar", () => openEdit(e.id)));
     row.append(info, btns); list.append(row);
   }
