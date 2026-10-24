@@ -192,6 +192,14 @@ function openLockScreen() {
 }
 function openMain() { show("vMain"); render(); resetLock(); }
 
+// Acepta "recenergy.es" o "https://…"; solo abre direcciones web normales
+function webUrl(w) {
+  w = (w || "").trim(); if (!w) return null;
+  if (!/^[a-z][a-z0-9+.-]*:/i.test(w)) w = "https://" + w;
+  try { const u = new URL(w); return (u.protocol === "https:" || u.protocol === "http:") ? u.href : null; }
+  catch (e) { return null; }
+}
+
 function render() {
   const q = $("q").value.trim().toLowerCase(), list = $("list");
   const items = entries
@@ -208,6 +216,8 @@ function render() {
     const mk = (txt, fn) => { const b = document.createElement("button"); b.className = "sm"; b.textContent = txt; b.onclick = fn; return b; };
     if (e.u) btns.append(mk("Usuario", () => copy(e.u, "Usuario")));
     if (e.p) btns.append(mk("Clave", () => copy(e.p, "Contraseña")));
+    const web = webUrl(e.w);
+    if (web) btns.append(mk("Web", () => window.open(web, "_blank", "noopener")));
     btns.append(mk("Editar", () => openEdit(e.id)));
     row.append(info, btns); list.append(row);
   }
